@@ -1,0 +1,92 @@
+#N canvas 472 329 1263 454 10;
+#X obj 105 113 hsl 128 15 0 1000 0 0 empty empty empty -2 -8 0 10 -262144
+-1 -1 0 1;
+#X obj 134 277 s \$1;
+#X obj 137 19 r \$1;
+#X msg 137 41 set \$1;
+#X obj 231 9 loadbang;
+#X obj 231 31 list \$2 \$3;
+#X obj 231 53 list prepend range;
+#X obj 231 75 list trim;
+#X obj 240 113 nbx 5 14 0 1000 0 0 empty empty empty 0 -8 0 10 -262144
+-1 -1 0 256;
+#X text 189 279 <- both numeric and slider will send to the symbol
+;
+#X text 5 23 update slider if value change ->, f 16;
+#X text 387 40 <- on load (or when parameters changed) we update the
+controls limit by sending a message (range min max) to both controls.
+, f 40;
+#X text 323 132 <- the red rectangle is the visible part of our abstraction
+, f 41;
+#X obj 102 392 s control-change;
+#X text 165 216 <- we control the trigging order : from right to left
+\, first update value and then play the sound. If not it looses sync.
+;
+#X text 239 391 <- we send a global bang to trigger the sound in the
+main patch. We add a 50ms delay to avoid trigger flooding., f 64;
+#X msg 102 314 clear \, \$1;
+#X obj 102 224 t f f;
+#X obj 102 363 list prepend \$1;
+#X obj 102 338 pipe 50;
+#X obj 298 112 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
+1;
+#X obj 682 192 r randomize;
+#X obj 718 221 spigot 1;
+#X obj 771 127 select 0;
+#X msg 771 149 1;
+#X msg 819 152 0;
+#X obj 718 243 random 32768;
+#X obj 718 265 / 32768;
+#X obj 771 348 s \$1;
+#X obj 818 204 loadbang;
+#X obj 818 229 f \$3;
+#X obj 818 251 - \$2;
+#X obj 771 304 *;
+#X obj 771 327 + \$2;
+#X obj 967 117 r dump-request;
+#X obj 967 170 f;
+#X obj 985 147 r \$1;
+#X obj 967 221 list prepend \$1;
+#X obj 967 243 s dump-response;
+#X obj 757 35 r lock-all;
+#X msg 757 57 1;
+#X obj 844 35 r unlock-all;
+#X msg 844 57 0;
+#X connect 0 0 17 0;
+#X connect 2 0 3 0;
+#X connect 3 0 0 0;
+#X connect 3 0 8 0;
+#X connect 4 0 5 0;
+#X connect 5 0 6 0;
+#X connect 6 0 7 0;
+#X connect 7 0 0 0;
+#X connect 7 0 8 0;
+#X connect 8 0 17 0;
+#X connect 16 0 19 0;
+#X connect 17 0 16 0;
+#X connect 17 1 1 0;
+#X connect 18 0 13 0;
+#X connect 19 0 18 0;
+#X connect 20 0 23 0;
+#X connect 21 0 22 0;
+#X connect 22 0 26 0;
+#X connect 23 0 24 0;
+#X connect 23 1 25 0;
+#X connect 24 0 22 1;
+#X connect 25 0 22 1;
+#X connect 26 0 27 0;
+#X connect 27 0 32 0;
+#X connect 29 0 30 0;
+#X connect 30 0 31 0;
+#X connect 31 0 32 1;
+#X connect 32 0 33 0;
+#X connect 33 0 28 0;
+#X connect 34 0 35 0;
+#X connect 35 0 37 0;
+#X connect 36 0 35 1;
+#X connect 37 0 38 0;
+#X connect 39 0 40 0;
+#X connect 40 0 20 0;
+#X connect 41 0 42 0;
+#X connect 42 0 20 0;
+#X coords 0 -1 1 1 218 32 1 100 100;

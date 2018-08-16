@@ -1,43 +1,67 @@
 package net.mgsx.pfxr;
 
-import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.utils.Array;
 
-public class PFXR extends ApplicationAdapter 
+import net.mgsx.pd.Pd;
+import net.mgsx.pd.PdConfiguration;
+import net.mgsx.pfxr.io.PdParser;
+import net.mgsx.pfxr.io.PdParser.PdCanvas;
+import net.mgsx.pfxr.io.PdParser.PdObject;
+import net.mgsx.pfxr.model.PfxrControl;
+
+public class PFXR extends Game 
 {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		// TODO configure your launcher and remove the this line
-		// begin configuration
 		config.width = 640;
 		config.height = 480;
-		// end configuration
 		new LwjglApplication(new PFXR(), config);
 	}
 
-	public PFXR() {
-		super();
-		// TODO contruct
-	}
-	
 	@Override
 	public void create () {
-		// TODO init sketch
+		PdConfiguration config = new PdConfiguration();
+		Pd.audio.create(config);
+		
+		FileHandle patch = Gdx.files.local("../pd/pfxr.pd");
+		
+		PdCanvas patchData = PdParser.parsePatch(patch);
+		
+		Array<PfxrControl> controls = new Array<PfxrControl>();
+		for(PdObject object : patchData.objects){
+			if("control".equals(object.name)){
+				PfxrControl c = new PfxrControl();
+				c.name = object.arguments[0];
+				c.min = Float.parseFloat(object.arguments[1]);
+				c.max = Float.parseFloat(object.arguments[2]);
+				controls.add(c);
+			}
+			else if("control-select".equals(object.name)){
+				PfxrControl c = new PfxrControl();
+				c.name = object.arguments[0];
+				int count = Integer.parseInt(object.arguments[1]);
+				c.min = 0;
+				c.max = count-1;
+				c.steps = 1;
+				if("type".equals(c.name)){
+					c.labels = new String[]{"Triangle", "Sin", "Square", "Saw", "White"};
+				}
+				controls.add(c);
+			}
+		}
+		
+		Pd.audio.open(patch);
+		
+		setScreen(new PFXRScreen(controls));
 	}
 
 	@Override
-	public void render () {
-		Gdx.gl.glClearColor(0, 0, 0, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		
-		// TODO render sketch
-	}
-	
-	@Override
 	public void dispose () {
-		// TODO dispose sketch
+		Pd.audio.dispose();
 	}
 }

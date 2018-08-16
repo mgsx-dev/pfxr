@@ -1,0 +1,21 @@
+#N canvas 659 307 545 402 10;
+#X obj 46 20 r control-change;
+#X obj 46 72 route attack-time;
+#X obj 46 43 list trim;
+#X obj 46 104 pack f f;
+#X obj 46 128 list prepend set;
+#X obj 46 162 list trim;
+#X msg 46 184 196.85 0;
+#X msg 29 234 2 \, 0.5 \, 0.13 \, 0.2 \, 0.295 \, 0.255 \, \, 0.815
+\, 0.57 \, -0.1949 \, \, 0.67 \, 0.485 \, \, \, \, 0.4 \, 0.508 \,
+\, \, \, \, \, \, \, 1 \, \, \, \, \, \, \, masterVolume;
+#X obj 52 307 print;
+#X obj 29 269 t b a b;
+#X connect 0 0 2 0;
+#X connect 1 0 3 0;
+#X connect 2 0 1 0;
+#X connect 3 0 4 0;
+#X connect 4 0 5 0;
+#X connect 5 0 6 0;
+#X connect 7 0 9 0;
+#X connect 9 1 8 0;
