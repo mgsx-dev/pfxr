@@ -1,16 +1,23 @@
 package net.mgsx.pfxr;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.ButtonGroup;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField.TextFieldListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
@@ -38,6 +45,8 @@ public class PFXRScreen extends StageScreen
 	
 	private boolean requestUpdate, requestWaveFormUpdate;
 	private float updateTimeout;
+	
+	private String lastPresetName = "";
 	
 	public PFXRScreen(Array<PfxrControl> controls) 
 	{
@@ -208,7 +217,8 @@ public class PFXRScreen extends StageScreen
 		root.add(controlsTable);
 	}
 	
-	private void savePreset() {
+	private void savePreset(FileHandle file) {
+		
 		// TODO user define
 		Preset preset = new Preset();
 		for(ControlUI c : sliders){
@@ -220,16 +230,141 @@ public class PFXRScreen extends StageScreen
 				p.value = c.group.getCheckedIndex();
 			preset.entries.add(p);
 		}
-		new PresetParser().save(preset, Gdx.files.local("../test.txt"));
+		new PresetParser().save(preset, file);
 	}
 
 	protected void loadPreset() {
-		// TODO user define
-		Preset preset = new PresetParser().parse(Gdx.files.local("../presets/bonus.txt"));
+		
+		final Dialog dialog = new Dialog("Load Preset", skin);
+		dialog.getStyle().stageBackground = skin.newDrawable("white", new Color(0, 0, 0, .75f));
+		dialog.setMovable(false);
+		Table presetList = new Table(skin);
+		presetList.defaults().fill().padRight(20).padLeft(20);
+		
+		for(final FileHandle file : Gdx.files.local("../presets").list("txt")){
+			TextButton btPreset = new TextButton(file.nameWithoutExtension(), skin);
+			presetList.add(btPreset).row();
+			btPreset.addListener(new ChangeListener() {
+				
+				@Override
+				public void changed(ChangeEvent event, Actor actor) {
+					loadPreset(file);
+					dialog.hide();
+				}
+			});
+		}
+		
+		ScrollPane sp = new ScrollPane(presetList, skin);
+		sp.setHeight(100);
+		sp.setScrollingDisabled(true, false);
+		sp.setForceScroll(false, true);
+		
+		Table t = new Table();
+		t.add(sp).growX().height(300);
+		
+		dialog.getContentTable().add(t);
+		
+		dialog.button("Cancel", null);
+		
+		dialog.show(stage);
+	}
+	
+	protected void savePreset() {
+		
+		final TextField tf = new TextField(lastPresetName, skin);
+		
+		final Dialog dialog = new Dialog("Save Preset", skin){
+			@Override
+			protected void result(Object object) {
+				if(Boolean.TRUE.equals(object)){
+					String name = tf.getText().trim();
+					if(!name.isEmpty()){
+						lastPresetName = name;
+						savePreset(Gdx.files.local("../presets").child(name + ".txt"));
+					}
+				}
+			}
+		};
+		dialog.getStyle().stageBackground = skin.newDrawable("white", new Color(0, 0, 0, .75f));
+		dialog.setMovable(false);
+		
+		final Label lb = new Label("File already exists and will be replaced", skin);
+		lb.setColor(Color.ORANGE);
+		lb.setVisible(false);
+		
+		dialog.getContentTable().defaults().fill();
+		dialog.getContentTable().add(tf).row();
+		dialog.getContentTable().add(lb).row();
+		
+		dialog.button("OK", true);
+		dialog.button("Cancel", false);
+		
+		dialog.show(stage);
+		
+		tf.setTextFieldListener(new TextFieldListener() {
+			@Override
+			public void keyTyped(TextField textField, char c) {
+				if(Gdx.files.local("../presets").child(textField.getText().trim() + ".txt").exists()){
+					lb.setVisible(true);
+				}else{
+					lb.setVisible(false);
+				}
+			}
+		});
+	}
+	
+	protected void exportAudio() {
+		
+		final TextField tf = new TextField(lastPresetName, skin);
+		
+		final Dialog dialog = new Dialog("Export Audio", skin){
+			@Override
+			protected void result(Object object) {
+				if(Boolean.TRUE.equals(object)){
+					String name = tf.getText().trim();
+					if(!name.isEmpty()){
+						lastPresetName = name;
+						exportAudio(Gdx.files.local("../audio").child(name + ".wav"));
+					}
+				}
+			}
+		};
+		dialog.getStyle().stageBackground = skin.newDrawable("white", new Color(0, 0, 0, .75f));
+		dialog.setMovable(false);
+		
+		final Label lb = new Label("File already exists and will be replaced", skin);
+		lb.setColor(Color.ORANGE);
+		lb.setVisible(false);
+		
+		dialog.getContentTable().defaults().fill();
+		dialog.getContentTable().add(tf).row();
+		dialog.getContentTable().add(lb).row();
+		
+		dialog.button("OK", true);
+		dialog.button("Cancel", false);
+		
+		dialog.show(stage);
+		
+		tf.setTextFieldListener(new TextFieldListener() {
+			@Override
+			public void keyTyped(TextField textField, char c) {
+				if(Gdx.files.local("../audio").child(textField.getText().trim() + ".wav").exists()){
+					lb.setVisible(true);
+				}else{
+					lb.setVisible(false);
+				}
+			}
+		});
+	}
+
+	protected void loadPreset(FileHandle file) {
+		Preset preset = new PresetParser().parse(file);
 		ObjectMap<String, PresetEntry> map = new ObjectMap<String, PresetEntry>();
 		for(PresetEntry p : preset.entries){
 			map.put(p.name, p);
 		}
+		
+		lastPresetName = file.nameWithoutExtension();
 		
 		disableEvents = true;
 		for(ControlUI c : sliders){
@@ -249,9 +384,8 @@ public class PFXRScreen extends StageScreen
 		Pd.audio.sendBang("control-change");
 	}
 
-	private void exportAudio() {
-		// TODO user enter a path ...
-		Pd.audio.sendSymbol("export-wave", "../test.wav");
+	private void exportAudio(FileHandle file) {
+		Pd.audio.sendSymbol("export-wave", file.file().getAbsolutePath());
 	}
 
 	private void randomize() {
