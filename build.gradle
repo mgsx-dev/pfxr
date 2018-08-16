@@ -9,7 +9,7 @@ buildscript {
 
 }
 
-version = '0.0.1-SNAPSHOT'
+version = '0.1.0'
 ext {
     appName = "pfxr"
     gdxVersion = '1.9.6'
@@ -77,8 +77,7 @@ task dist(type: Jar) {
     from files(sourceSets.main.output.classesDir)
     from files(sourceSets.main.output.resourcesDir)
     from {configurations.compile.collect {zipTree(it)}}
-    from files(project.assetsDir);
- 
+ 	archiveName = "${appName}.jar"
     manifest {
         attributes 'Main-Class': project.mainClassName
     }
@@ -86,3 +85,17 @@ task dist(type: Jar) {
 
 dist.dependsOn classes
 
+task distZip(type: Zip, dependsOn: dist){
+	from files('build/libs/'){
+    	include 'pfxr.jar'
+    	fileMode = 0755
+    }
+    from files('dist/'){
+    	include "*.txt"
+    }
+    from files('.'){
+    	include 'pd/*.pd', 'presets/*.txt', 'audio', 'assets/skins/*'
+    }
+   	archiveName "${appName}-${version}.zip"
+   	destinationDir(file("build"))
+}

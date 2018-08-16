@@ -16,10 +16,12 @@ import net.mgsx.pfxr.model.PfxrControl;
 
 public class PFXR extends Game 
 {
+	private static final String pdPath = "pd";
+	
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		config.width = 640;
-		config.height = 480;
+		config.width = 800;
+		config.height = 600;
 		new LwjglApplication(new PFXR(), config);
 	}
 
@@ -28,7 +30,7 @@ public class PFXR extends Game
 		PdConfiguration config = new PdConfiguration();
 		Pd.audio.create(config);
 		
-		FileHandle patch = Gdx.files.local("../pd/pfxr.pd");
+		FileHandle patch = Gdx.files.local(pdPath + "/pfxr.pd");
 		
 		PdCanvas patchData = PdParser.parsePatch(patch);
 		

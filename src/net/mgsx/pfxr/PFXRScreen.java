@@ -4,12 +4,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.ButtonGroup;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -34,14 +35,15 @@ import net.mgsx.pfxr.utils.StageScreen;
 
 public class PFXRScreen extends StageScreen
 {
+	private static final String presetPath = "presets";
+	private static final String audioPath = "audio";
+	
 	private Array<ControlUI> sliders = new Array<ControlUI>();
 
 	private boolean disableEvents;
 	
 	private WaveFormUI finalWaveRenderer;
 	private WaveFormUI waveFormRenderer;
-	
-	private ShapeRenderer shapeRenderer;
 	
 	private boolean requestUpdate, requestWaveFormUpdate;
 	private float updateTimeout;
@@ -63,15 +65,14 @@ public class PFXRScreen extends StageScreen
 		
 		waveFormRenderer = new WaveFormUI(200, 100);
 		
-		shapeRenderer = new ShapeRenderer();
-		
-		skin = new Skin(Gdx.files.internal("skins/uiskin.json"));
+		skin = new Skin(Gdx.files.internal("assets/skins/uiskin.json"));
 		
 		Table root = new Table(skin);
 		root.setFillParent(true);
 		stage.addActor(root);
 		
 		Table controlsTable = new Table(skin);
+		controlsTable.defaults().pad(4);
 		
 		for(final PfxrControl control : controls){
 			
@@ -106,7 +107,7 @@ public class PFXRScreen extends StageScreen
 					final TextButton bt = new TextButton(label, skin, "toggle");
 					group.add(bt);
 					
-					t.add(bt).row();
+					t.add(bt).fill().row();
 					
 					bt.addListener(new ChangeListener() {
 						@Override
@@ -136,8 +137,11 @@ public class PFXRScreen extends StageScreen
 			cui.btLock = btLock;
 		}
 		
+		Table menu = new Table(skin);
+		menu.defaults().pad(10).fill();
+		
 		TextButton btTest = new TextButton("Play", skin);
-		root.add(btTest).row();
+		menu.add(btTest).row();
 		btTest.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
@@ -146,7 +150,7 @@ public class PFXRScreen extends StageScreen
 		});
 		
 		TextButton btRand = new TextButton("Randomize", skin);
-		root.add(btRand).row();
+		menu.add(btRand).row();
 		btRand.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
@@ -155,7 +159,7 @@ public class PFXRScreen extends StageScreen
 		});
 		
 		TextButton btLockAll = new TextButton("Lock All", skin);
-		root.add(btLockAll).row();
+		menu.add(btLockAll).row();
 		btLockAll.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
@@ -165,7 +169,7 @@ public class PFXRScreen extends StageScreen
 			}
 		});
 		TextButton btUnLockAll = new TextButton("Unlock All", skin);
-		root.add(btUnLockAll).row();
+		menu.add(btUnLockAll).row();
 		btUnLockAll.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
@@ -176,7 +180,7 @@ public class PFXRScreen extends StageScreen
 		});
 		
 		TextButton btSavePreset = new TextButton("Save Preset", skin);
-		root.add(btSavePreset).row();
+		menu.add(btSavePreset).row();
 		btSavePreset.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
@@ -185,7 +189,7 @@ public class PFXRScreen extends StageScreen
 		});
 		
 		TextButton btLoadPreset = new TextButton("Load Preset", skin);
-		root.add(btLoadPreset).row();
+		menu.add(btLoadPreset).row();
 		btLoadPreset.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
@@ -194,7 +198,7 @@ public class PFXRScreen extends StageScreen
 		});
 		
 		TextButton btExportAudio = new TextButton("Export Audio", skin);
-		root.add(btExportAudio).row();
+		menu.add(btExportAudio).row();
 		btExportAudio.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
@@ -202,19 +206,21 @@ public class PFXRScreen extends StageScreen
 			}
 		});
 		
-		TextButton btUpdateForm = new TextButton("Update form", skin);
-		root.add(btUpdateForm).row();
-		btUpdateForm.addListener(new ChangeListener() {
-			@Override
-			public void changed(ChangeEvent event, Actor actor) {
-				int size = Pd.audio.arraySize("wave");
-				float[] array = new float[size];
-				Pd.audio.readArray(array, 0, "wave", 0, size);
-				finalWaveRenderer.update(array);
-			}
-		});
+		menu.add(new Image(waveFormRenderer.getTexture())).row();
+		menu.add(new Image(finalWaveRenderer.getTexture())).row();
 		
+		root.add(menu);
 		root.add(controlsTable);
+		
+		loadPreset(Gdx.files.local(presetPath + "/bonus.txt"));
+		
+		stage.addAction(Actions.sequence(Actions.delay(1), Actions.run(new Runnable() {
+			@Override
+			public void run() {
+				requestWaveFormUpdate = true;
+			}
+		})));
+		
 	}
 	
 	private void savePreset(FileHandle file) {
@@ -241,7 +247,7 @@ public class PFXRScreen extends StageScreen
 		Table presetList = new Table(skin);
 		presetList.defaults().fill().padRight(20).padLeft(20);
 		
-		for(final FileHandle file : Gdx.files.local("../presets").list("txt")){
+		for(final FileHandle file : Gdx.files.local(presetPath).list("txt")){
 			TextButton btPreset = new TextButton(file.nameWithoutExtension(), skin);
 			presetList.add(btPreset).row();
 			btPreset.addListener(new ChangeListener() {
@@ -280,7 +286,7 @@ public class PFXRScreen extends StageScreen
 					String name = tf.getText().trim();
 					if(!name.isEmpty()){
 						lastPresetName = name;
-						savePreset(Gdx.files.local("../presets").child(name + ".txt"));
+						savePreset(Gdx.files.local(presetPath).child(name + ".txt"));
 					}
 				}
 			}
@@ -304,7 +310,7 @@ public class PFXRScreen extends StageScreen
 		tf.setTextFieldListener(new TextFieldListener() {
 			@Override
 			public void keyTyped(TextField textField, char c) {
-				if(Gdx.files.local("../presets").child(textField.getText().trim() + ".txt").exists()){
+				if(Gdx.files.local(presetPath).child(textField.getText().trim() + ".txt").exists()){
 					lb.setVisible(true);
 				}else{
 					lb.setVisible(false);
@@ -324,7 +330,7 @@ public class PFXRScreen extends StageScreen
 					String name = tf.getText().trim();
 					if(!name.isEmpty()){
 						lastPresetName = name;
-						exportAudio(Gdx.files.local("../audio").child(name + ".wav"));
+						exportAudio(Gdx.files.local(audioPath).child(name + ".wav"));
 					}
 				}
 			}
@@ -348,7 +354,7 @@ public class PFXRScreen extends StageScreen
 		tf.setTextFieldListener(new TextFieldListener() {
 			@Override
 			public void keyTyped(TextField textField, char c) {
-				if(Gdx.files.local("../audio").child(textField.getText().trim() + ".wav").exists()){
+				if(Gdx.files.local(audioPath).child(textField.getText().trim() + ".wav").exists()){
 					lb.setVisible(true);
 				}else{
 					lb.setVisible(false);
@@ -415,7 +421,6 @@ public class PFXRScreen extends StageScreen
 			float[] array = new float[size];
 			Pd.audio.readArray(array, 0, "waveform", 0, size);
 			waveFormRenderer.update(array);
-			System.out.println("update WaveForm");
 		}
 		
 		if(requestUpdate){
@@ -426,22 +431,11 @@ public class PFXRScreen extends StageScreen
 				float[] array = new float[size];
 				Pd.audio.readArray(array, 0, "wave", 0, size);
 				finalWaveRenderer.update(array);
-				System.out.println("update");
 			}
 		}
 		
 		Gdx.gl.glClearColor(0, 0, 0, 0);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		super.render(delta);
-		
-		shapeRenderer.getTransformMatrix().idt();
-		shapeRenderer.getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		shapeRenderer.updateMatrices();
-		finalWaveRenderer.draw(shapeRenderer);
-		
-		shapeRenderer.getTransformMatrix().setToTranslation(0, 200, 0);
-		shapeRenderer.getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		shapeRenderer.updateMatrices();
-		waveFormRenderer.draw(shapeRenderer);
 	}
 }

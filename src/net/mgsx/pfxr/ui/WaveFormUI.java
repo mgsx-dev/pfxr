@@ -1,18 +1,29 @@
 package net.mgsx.pfxr.ui;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 
 public class WaveFormUI {
 	private float [] vertices;
 	private int width, height;
+	private FrameBuffer fbo;
+	private ShapeRenderer renderer;
+	private Color bgColor = new Color(Color.BLUE).mul(.3f);
 	
 	public WaveFormUI(int width, int height) {
 		super();
 		this.width = width;
 		this.height = height;
 		vertices = new float[width * 2];
+		renderer = new ShapeRenderer();
+		renderer.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+		fbo = new FrameBuffer(Format.RGBA8888, width, height, false);
 	}
 
 	public void update(float [] data){
@@ -23,12 +34,21 @@ public class WaveFormUI {
 			vertices[x * 2 + 0] = x;
 			vertices[x * 2 + 1] = y * height;
 		}
+		draw();
 	}
 	
-	public void draw(ShapeRenderer renderer){
+	private void draw(){
+		fbo.begin();
+		Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, 1);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		renderer.begin(ShapeType.Line);
 		renderer.setColor(Color.BLUE);
-		renderer.polyline(vertices, 0, vertices.length/2);
+		renderer.polyline(vertices, 0, vertices.length);
 		renderer.end();
+		fbo.end();
+	}
+
+	public Texture getTexture() {
+		return fbo.getColorBufferTexture();
 	}
 }
