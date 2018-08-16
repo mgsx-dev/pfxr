@@ -1,0 +1,88 @@
+buildscript {
+    
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        jcenter()
+    }
+
+}
+
+version = '0.0.1-SNAPSHOT'
+ext {
+    appName = "pfxr"
+    gdxVersion = '1.9.6'
+    pdVersion = '0.7.0'
+    junitVersion = '4.12'
+    mainClassName = "net.mgsx.pfxr.PFXR"
+    assetsDir = new File("assets");
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+}
+
+apply plugin: "eclipse"
+
+eclipse {
+    project {
+        name = appName
+    }
+}
+
+
+apply plugin: "idea"
+apply plugin: "java"
+
+
+dependencies {
+    compile "com.badlogicgames.gdx:gdx:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+    compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+    compile "net.mgsx.gdx:gdx-pd:$pdVersion"
+    
+    compile "net.mgsx.gdx:gdx-pd-platform:$pdVersion:desktop"
+    compile "net.mgsx.gdx:gdx-pd-platform:$pdVersion:natives-desktop"
+
+    testCompile "junit:junit:$junitVersion"
+}
+
+sourceCompatibility = 1.6
+sourceSets.main.java.srcDirs = [ "src/" ]
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+task run(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+}
+
+task debug(dependsOn: classes, type: JavaExec) {
+    main = project.mainClassName
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = project.assetsDir
+    ignoreExitValue = true
+    debug = true
+}
+
+task dist(type: Jar) {
+    from files(sourceSets.main.output.classesDir)
+    from files(sourceSets.main.output.resourcesDir)
+    from {configurations.compile.collect {zipTree(it)}}
+    from files(project.assetsDir);
+ 
+    manifest {
+        attributes 'Main-Class': project.mainClassName
+    }
+}
+
+dist.dependsOn classes
+
