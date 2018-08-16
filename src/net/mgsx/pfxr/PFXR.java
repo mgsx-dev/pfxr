@@ -20,8 +20,8 @@ public class PFXR extends Game
 	
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		config.width = 800;
-		config.height = 600;
+		config.width = 750;
+		config.height = 900;
 		new LwjglApplication(new PFXR(), config);
 	}
 

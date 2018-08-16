@@ -14,10 +14,12 @@ public class WaveFormUI {
 	private int width, height;
 	private FrameBuffer fbo;
 	private ShapeRenderer renderer;
-	private Color bgColor = new Color(Color.BLUE).mul(.3f);
+	private Color bgColor, fgColor;
 	
-	public WaveFormUI(int width, int height) {
+	public WaveFormUI(int width, int height, Color color) {
 		super();
+		bgColor = new Color(color).mul(.3f);
+		fgColor = new Color(color);
 		this.width = width;
 		this.height = height;
 		vertices = new float[width * 2];
@@ -30,7 +32,7 @@ public class WaveFormUI {
 		for(int x=0 ; x<width ; x++){
 			float t = (float)x / (float)width;
 			int index = (int)(t * data.length);
-			float y = (data[index] + 1) / 2;
+			float y = ((data[index] * 0.9f + 1) / 2);
 			vertices[x * 2 + 0] = x;
 			vertices[x * 2 + 1] = y * height;
 		}
@@ -42,7 +44,7 @@ public class WaveFormUI {
 		Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		renderer.begin(ShapeType.Line);
-		renderer.setColor(Color.BLUE);
+		renderer.setColor(fgColor);
 		renderer.polyline(vertices, 0, vertices.length);
 		renderer.end();
 		fbo.end();

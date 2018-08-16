@@ -39,6 +39,8 @@ public class PFXRScreen extends StageScreen
 	private static final String audioPath = "audio";
 	
 	private Array<ControlUI> sliders = new Array<ControlUI>();
+	
+	private Color bg = new Color(Color.WHITE).mul(.2f);
 
 	private boolean disableEvents;
 	
@@ -49,6 +51,9 @@ public class PFXRScreen extends StageScreen
 	private float updateTimeout;
 	
 	private String lastPresetName = "";
+	
+	private ObjectMap<String, PfxrControl> controlMap = new ObjectMap<String, PfxrControl>();
+	private Table controlsTable;
 	
 	public PFXRScreen(Array<PfxrControl> controls) 
 	{
@@ -61,9 +66,9 @@ public class PFXRScreen extends StageScreen
 			}
 		});
 		
-		finalWaveRenderer = new WaveFormUI(200, 100);
+		finalWaveRenderer = new WaveFormUI(200, 100, Color.ORANGE);
 		
-		waveFormRenderer = new WaveFormUI(200, 100);
+		waveFormRenderer = new WaveFormUI(200, 100, Color.YELLOW);
 		
 		skin = new Skin(Gdx.files.internal("assets/skins/uiskin.json"));
 		
@@ -71,74 +76,63 @@ public class PFXRScreen extends StageScreen
 		root.setFillParent(true);
 		stage.addActor(root);
 		
-		Table controlsTable = new Table(skin);
+		controlsTable = new Table(skin);
 		controlsTable.defaults().pad(4);
+		
 		
 		for(final PfxrControl control : controls){
 			
-			controlsTable.add(control.name);
+			controlMap.put(control.name, control);
 			
-			ControlUI cui = new ControlUI(control);
-			sliders.add(cui);
-			
-			if(control.labels == null){
-				final Slider slider = new Slider(control.min, control.max, (control.max - control.min) / 100f, false, skin);
-				cui.slider = slider;
-				controlsTable.add(slider);
-				slider.addListener(new ChangeListener() {
-					@Override
-					public void changed(ChangeEvent event, Actor actor) {
-						if(!slider.isDragging()){
-							Pd.audio.sendFloat(control.name, slider.getValue());
-							if(!disableEvents)
-								Pd.audio.sendBang("control-change");
-						}
-					}
-				});
-			}
-			else{
-				// select box
-				ButtonGroup<Button> group = new ButtonGroup<Button>();
-				cui.group = group;
-				Table t = new Table();
-				for(int i=0 ; i<control.labels.length ; i++){
-					String label = control.labels[i];
-					final int index = i;
-					final TextButton bt = new TextButton(label, skin, "toggle");
-					group.add(bt);
-					
-					t.add(bt).fill().row();
-					
-					bt.addListener(new ChangeListener() {
-						@Override
-						public void changed(ChangeEvent event, Actor actor) {
-							if(bt.isChecked()){
-								Pd.audio.sendFloat(control.name, index);
-								if(!disableEvents)
-									Pd.audio.sendBang("control-change");
-							}
-						}
-					});
-				}
-				controlsTable.add(t);
-				
-			}
-			
-			final TextButton btLock = new TextButton("lock", skin, "toggle");
-			controlsTable.add(btLock);
-			controlsTable.row();
-			
-			btLock.addListener(new ChangeListener() {
-				@Override
-				public void changed(ChangeEvent event, Actor actor) {
-					control.locked = btLock.isChecked();
-				}
-			});
-			cui.btLock = btLock;
 		}
 		
+		appendGroup("Envelop");
+		
+		appendControl("attack-time");
+		appendControl("sustain-time");
+		appendControl("decay-time");
+		
+		appendGroup("Wave Form");
+		
+		appendControl("type");
+		
+		appendGroup("Pitch");
+		
+		appendControl("frequency");
+		
+		appendControl("pitch-slide");
+		
+		appendControl("vibrato-speed");
+		appendControl("vibrato-depth");
+		
+		appendGroup("Tremolo");
+		
+		appendControl("tremolo-depth");
+		appendControl("tremolo-speed");
+		
+		appendGroup("Bit Crusher");
+		
+		appendControl("bit-crush");
+		appendControl("bit-sweep");
+		
+		appendGroup("Pitch Jumper");
+		
+		appendControl("pitch-jump-speed");
+		appendControl("pitch-jump-range");
+		
+		
+			
 		Table menu = new Table(skin);
 		menu.defaults().pad(10).fill();
+		
+		Label lbTitle = menu.add("PFXR").getActor();
+		lbTitle.setFontScale(2);
+		lbTitle.setColor(Color.ROYAL);
+		menu.row();
+		
+		
+		menu.add("Playground").padBottom(2).getActor().setColor(Color.LIGHT_GRAY);
+		menu.row();
 		
 		TextButton btTest = new TextButton("Play", skin);
 		menu.add(btTest).row();
@@ -179,6 +173,9 @@ public class PFXRScreen extends StageScreen
 			}
 		});
 		
+		menu.add("File management").padBottom(2).getActor().setColor(Color.LIGHT_GRAY);
+		menu.row();
+		
 		TextButton btSavePreset = new TextButton("Save Preset", skin);
 		menu.add(btSavePreset).row();
 		btSavePreset.addListener(new ChangeListener() {
@@ -206,7 +203,12 @@ public class PFXRScreen extends StageScreen
 			}
 		});
 		
+		menu.add("Wave form preview").padBottom(2).getActor().setColor(Color.YELLOW);
+		menu.row();
 		menu.add(new Image(waveFormRenderer.getTexture())).row();
+		
+		menu.add("Final SFX preview").padBottom(2).getActor().setColor(Color.ORANGE);
+		menu.row();
 		menu.add(new Image(finalWaveRenderer.getTexture())).row();
 		
 		root.add(menu);
@@ -221,6 +223,88 @@ public class PFXRScreen extends StageScreen
 			}
 		})));
 		
+	}
+	
+	private void appendGroup(String name) {
+		controlsTable.add(name).colspan(2).expandX().left().getActor().setColor(Color.ROYAL);;
+		controlsTable.row();
+	}
+
+	private void appendControl(String name) {
+		appendControl(controlsTable, controlMap.get(name));
+	}
+
+	private void appendControl(Table controlsTable, final PfxrControl control)
+	{
+		controlsTable.add(control.name);
+		
+		
+		ControlUI cui = new ControlUI(control);
+		sliders.add(cui);
+		
+		if(control.labels == null){
+			final Label valueLabel = new Label(String.valueOf(control.min), skin);
+			valueLabel.setColor(Color.GRAY);
+			
+			final Slider slider = new Slider(control.min, control.max, (control.max - control.min) / 100f, false, skin);
+			cui.slider = slider;
+			controlsTable.add(slider);
+			controlsTable.add(valueLabel).width(80);
+			slider.addListener(new ChangeListener() {
+				@Override
+				public void changed(ChangeEvent event, Actor actor) {
+					if(!slider.isDragging()){
+						Pd.audio.sendFloat(control.name, slider.getValue());
+						if(!disableEvents)
+							Pd.audio.sendBang("control-change");
+					}
+					valueLabel.setText(String.valueOf(slider.getValue()));
+				}
+			});
+		}
+		else{
+			// select box
+			ButtonGroup<Button> group = new ButtonGroup<Button>();
+			cui.group = group;
+			Table t = new Table();
+			for(int i=0 ; i<control.labels.length ; i++){
+				String label = control.labels[i];
+				final int index = i;
+				final TextButton bt = new TextButton(label, skin, "toggle");
+				group.add(bt);
+				
+				t.add(bt).fill().row();
+				
+				bt.addListener(new ChangeListener() {
+					@Override
+					public void changed(ChangeEvent event, Actor actor) {
+						if(bt.isChecked()){
+							Pd.audio.sendFloat(control.name, index);
+							if(!disableEvents)
+								Pd.audio.sendBang("control-change");
+						}
+					}
+				});
+			}
+			controlsTable.add(t);
+			controlsTable.add();
+			
+		}
+		
+		// force to workaround no slider update if same value
+		Pd.audio.sendFloat(control.name, control.min);
+		
+		final TextButton btLock = new TextButton("lock", skin, "toggle");
+		controlsTable.add(btLock);
+		controlsTable.row();
+		
+		btLock.addListener(new ChangeListener() {
+			@Override
+			public void changed(ChangeEvent event, Actor actor) {
+				control.locked = btLock.isChecked();
+			}
+		});
+		cui.btLock = btLock;
 	}
 	
 	private void savePreset(FileHandle file) {
@@ -434,7 +518,7 @@ public class PFXRScreen extends StageScreen
 			}
 		}
 		
-		Gdx.gl.glClearColor(0, 0, 0, 0);
+		Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		super.render(delta);
 	}
